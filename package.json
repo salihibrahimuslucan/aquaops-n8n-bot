@@ -1,0 +1,9 @@
+{
+  "name": "aquaops-bot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AquaOps Botu — n8n ile ERP Gözcüsü (sabah raporu) + Telegram ERP Asistanı",
+  "scripts": {
+    "n8n": "n8n start --tunnel"
+  }
+}
