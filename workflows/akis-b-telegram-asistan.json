@@ -1,4 +1,5 @@
 {
+  "id": "AqAkisB000000001",
   "name": "Akis B — Telegram ERP Asistani",
   "nodes": [
     { "id": "b1", "name": "Telegram Dinle", "type": "n8n-nodes-base.telegramTrigger", "typeVersion": 1.1,
@@ -49,7 +50,7 @@
       "credentials": { "postgres": { "id": "AqErpPostgres001", "name": "AquaERP okuma (n8n_ro)" } } },
     { "id": "b8", "name": "Stok Cevabi", "type": "n8n-nodes-base.code", "typeVersion": 2,
       "position": [1450, -220],
-      "parameters": { "jsCode": "const rows = $input.all().map(i => i.json).filter(r => r.name);\nif (!rows.length) return [{ json: { cevap: `\"${$('Intent Coz').item.json.arama}\" ile eslesen urun bulunamadi.` } }];\nconst list = rows.map(r => `\\u2022 ${r.name} [${r.family}]: ${r.qty} adet` + (r.critical > 0 && r.qty <= r.critical ? ' \\u26a0' : '')).join('\\n');\nreturn [{ json: { cevap: '\\ud83d\\udce6 Stok durumu:\\n' + list } }];" } },
+      "parameters": { "jsCode": "const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');\nconst rows = $input.all().map(i => i.json).filter(r => r.name);\nif (!rows.length) return [{ json: { cevap: esc(`\"${$('Intent Coz').item.json.arama}\" ile eslesen urun bulunamadi.`) } }];\nconst list = rows.map(r => `\\u2022 ${esc(r.name)} [${esc(r.family)}]: ${r.qty} adet` + (r.critical > 0 && r.qty <= r.critical ? ' \\u26a0' : '')).join('\\n');\nreturn [{ json: { cevap: '\\ud83d\\udce6 Stok durumu:\\n' + list } }];" } },
     { "id": "b9", "name": "PG Emirler", "type": "n8n-nodes-base.postgres", "typeVersion": 2.4,
       "position": [1250, -60], "alwaysOutputData": true,
       "parameters": { "operation": "executeQuery",
@@ -58,7 +59,7 @@
       "credentials": { "postgres": { "id": "AqErpPostgres001", "name": "AquaERP okuma (n8n_ro)" } } },
     { "id": "b10", "name": "Emir Cevabi", "type": "n8n-nodes-base.code", "typeVersion": 2,
       "position": [1450, -60],
-      "parameters": { "jsCode": "const rows = $input.all().map(i => i.json).filter(r => r.product_name);\nif (!rows.length) return [{ json: { cevap: 'Acik uretim emri yok.' } }];\nconst list = rows.map(r => `\\u2022 #${r.id} ${r.product_name} \\u00d7${r.qty} [${r.status}] (${r.tarih})`).join('\\n');\nreturn [{ json: { cevap: '\\ud83c\\udfed Acik emirler:\\n' + list } }];" } },
+      "parameters": { "jsCode": "const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');\nconst rows = $input.all().map(i => i.json).filter(r => r.product_name);\nif (!rows.length) return [{ json: { cevap: 'Acik uretim emri yok.' } }];\nconst list = rows.map(r => `\\u2022 #${r.id} ${esc(r.product_name)} \\u00d7${r.qty} [${esc(r.status)}] (${r.tarih})`).join('\\n');\nreturn [{ json: { cevap: '\\ud83c\\udfed Acik emirler:\\n' + list } }];" } },
     { "id": "b11", "name": "Kur Cek", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.1,
       "position": [1250, 100],
       "parameters": { "method": "GET", "url": "https://api.frankfurter.app/latest?from=EUR&to=TRY,USD", "options": {} } },
@@ -79,12 +80,12 @@
       "credentials": { "httpHeaderAuth": { "id": "AqGeminiHeader001", "name": "Gemini API Key (header)" } } },
     { "id": "b15", "name": "Sohbet Cevabi", "type": "n8n-nodes-base.code", "typeVersion": 2,
       "position": [1650, 260],
-      "parameters": { "jsCode": "const c = $json.candidates;\nconst cevap = (c && c[0] && c[0].content && c[0].content.parts && c[0].content.parts[0].text) ? c[0].content.parts[0].text : 'Su an cevap uretemedim.';\nreturn [{ json: { cevap } }];" } },
+      "parameters": { "jsCode": "const c = $json.candidates;\nlet cevap = (c && c[0] && c[0].content && c[0].content.parts && c[0].content.parts[0].text) ? c[0].content.parts[0].text : 'Su an cevap uretemedim.';\ncevap = cevap.replace(/\\*\\*/g, '').replace(/^\\s*[\\*\\-]\\s+/gm, '\\u2022 ').replace(/^#+\\s*/gm, '');\ncevap = cevap.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');\nif (cevap.length > 3500) cevap = cevap.slice(0, 3500) + '\\u2026';\nreturn [{ json: { cevap } }];" } },
     { "id": "b16", "name": "Cevap Gonder", "type": "n8n-nodes-base.telegram", "typeVersion": 1.2,
       "position": [1900, 0],
       "parameters": { "resource": "message", "operation": "sendMessage",
         "chatId": "={{ $('Telegram Dinle').item.json.message.chat.id }}",
-        "text": "={{ $json.cevap }}", "additionalFields": {} },
+        "text": "={{ $json.cevap }}", "additionalFields": { "appendAttribution": false, "parse_mode": "HTML" } },
       "credentials": { "telegramApi": { "id": "AqTelegramBot001", "name": "Telegram @your_bot" } } }
   ],
   "connections": {
@@ -109,5 +110,5 @@
     "Gemini Sohbet": { "main": [[ { "node": "Sohbet Cevabi", "type": "main", "index": 0 } ]] },
     "Sohbet Cevabi": { "main": [[ { "node": "Cevap Gonder", "type": "main", "index": 0 } ]] }
   },
-  "settings": { "executionOrder": "v1", "errorWorkflow": "__BEKCI_ID__", "timezone": "Europe/Istanbul" }
+  "settings": { "executionOrder": "v1", "errorWorkflow": "AqBekci000000001", "timezone": "Europe/Istanbul" }
 }

@@ -1,9 +1,12 @@
 {
+  "id": "AqAkisA000000001",
   "name": "Akis A — ERP Gozcusu (sabah raporu)",
   "nodes": [
     { "id": "a1", "name": "Her Sabah 0845", "type": "n8n-nodes-base.scheduleTrigger", "typeVersion": 1.2,
       "position": [0, 0],
       "parameters": { "rule": { "interval": [ { "field": "cronExpression", "expression": "45 8 * * *" } ] } } },
+    { "id": "a0", "name": "Manuel Test", "type": "n8n-nodes-base.manualTrigger", "typeVersion": 1,
+      "position": [0, 200], "parameters": {} },
     { "id": "a2", "name": "PG Kritik Stok", "type": "n8n-nodes-base.postgres", "typeVersion": 2.4,
       "position": [200, 0], "alwaysOutputData": true,
       "parameters": { "operation": "executeQuery",
@@ -24,7 +27,7 @@
       "credentials": { "postgres": { "id": "AqErpPostgres001", "name": "AquaERP okuma (n8n_ro)" } } },
     { "id": "a5", "name": "Rapor Paketle", "type": "n8n-nodes-base.code", "typeVersion": 2,
       "position": [800, 0],
-      "parameters": { "jsCode": "const kritik = $('PG Kritik Stok').all().map(i => i.json).filter(r => r.name);\nconst emirler = $('PG Acik Emirler').all().map(i => i.json).filter(r => r.product_name);\nconst hareket = $('PG Son 24s Hareket').all().map(i => i.json).filter(r => r.name);\nconst konu = kritik.length > 0 ? '\\u26a0 AquaOps: kritik stok!' : 'AquaOps: gunluk rapor';\nconst prompt = `Sen Aquatronic'in uretim/stok asistanisin. Asagidaki ERP verisinden Turkce, kisa, madde isaretli bir sabah raporu yaz. Bolumler: Kritik Stok (yoksa 'kritik stok yok' de), Acik Uretim Emirleri, Son 24 Saat Hareketler (yoksa 'hareket yok'). Sayilari aynen kullan, yorum kisa olsun, uydurma bilgi ekleme.\\n\\nVERI:\\n${JSON.stringify({ kritik, acik_emirler: emirler, son_24_saat: hareket })}`;\nreturn [{ json: { konu, kritik_sayisi: kritik.length, kritik_liste: kritik.map(k => `${k.name} (${k.qty}/${k.critical})`).join(', '), prompt } }];" } },
+      "parameters": { "jsCode": "const kritik = $('PG Kritik Stok').all().map(i => i.json).filter(r => r.name);\nconst emirler = $('PG Acik Emirler').all().map(i => i.json).filter(r => r.product_name);\nconst hareket = $('PG Son 24s Hareket').all().map(i => i.json).filter(r => r.name);\nconst esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');\nconst konu = kritik.length > 0 ? '\\u26a0 AquaOps: kritik stok!' : 'AquaOps: gunluk rapor';\nconst prompt = `Sen Aquatronic'in uretim/stok asistanisin. Asagidaki ERP verisinden Turkce, kisa bir sabah raporu yaz. DUZ METIN yaz: markdown, yildiz, diyez gibi bicimlendirme isareti KULLANMA; madde imi olarak \\u2022 kullan. En fazla 2000 karakter. Bolumler: Kritik Stok (cok kalem varsa en onemli 15 tanesini yaz, kalanini toplam sayi olarak ozetle; hic yoksa 'kritik stok yok' de), Acik Uretim Emirleri, Son 24 Saat Hareketler (yoksa 'hareket yok'). Sayilari aynen kullan, uydurma bilgi ekleme.\\n\\nVERI:\\n${JSON.stringify({ kritik, acik_emirler: emirler, son_24_saat: hareket })}`;\nconst ilk = kritik.slice(0, 25).map(k => `${k.name} (${k.qty}/${k.critical})`).join(', ');\nconst kalan = kritik.length > 25 ? ` \\u2026 (+${kritik.length - 25} kalem daha)` : '';\nreturn [{ json: { konu, kritik_sayisi: kritik.length, kritik_liste: esc(ilk + kalan).slice(0, 1500), prompt } }];" } },
     { "id": "a6", "name": "Gemini Ozet", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.1,
       "position": [1000, -80],
       "parameters": { "method": "POST",
@@ -36,7 +39,7 @@
       "credentials": { "httpHeaderAuth": { "id": "AqGeminiHeader001", "name": "Gemini API Key (header)" } } },
     { "id": "a7", "name": "Metin Hazirla", "type": "n8n-nodes-base.code", "typeVersion": 2,
       "position": [1200, -80],
-      "parameters": { "jsCode": "const c = $json.candidates;\nconst ozet = (c && c[0] && c[0].content && c[0].content.parts && c[0].content.parts[0].text) ? c[0].content.parts[0].text : 'Gemini cevabi alinamadi (ham cevap execution logunda).';\nreturn [{ json: { konu: $('Rapor Paketle').item.json.konu, ozet } }];" } },
+      "parameters": { "jsCode": "const c = $json.candidates;\nlet ozet = (c && c[0] && c[0].content && c[0].content.parts && c[0].content.parts[0].text) ? c[0].content.parts[0].text : 'Gemini cevabi alinamadi (ham cevap execution logunda).';\nozet = ozet.replace(/\\*\\*/g, '').replace(/^\\s*[\\*\\-]\\s+/gm, '\\u2022 ').replace(/^#+\\s*/gm, '');\nozet = ozet.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');\nif (ozet.length > 3500) ozet = ozet.slice(0, 3500) + '\\u2026';\nreturn [{ json: { konu: $('Rapor Paketle').item.json.konu, ozet } }];" } },
     { "id": "a8", "name": "Mail Gonder", "type": "n8n-nodes-base.emailSend", "typeVersion": 2,
       "position": [1400, -80],
       "parameters": { "fromEmail": "you@example.com", "toEmail": "you@example.com",
@@ -46,7 +49,7 @@
       "position": [1600, -80],
       "parameters": { "resource": "message", "operation": "sendMessage", "chatId": "YOUR_CHAT_ID",
         "text": "={{ $('Metin Hazirla').item.json.konu }}\n\n{{ $('Metin Hazirla').item.json.ozet }}",
-        "additionalFields": {} },
+        "additionalFields": { "appendAttribution": false, "parse_mode": "HTML" } },
       "credentials": { "telegramApi": { "id": "AqTelegramBot001", "name": "Telegram @your_bot" } } },
     { "id": "a10", "name": "Kritik Var Mi", "type": "n8n-nodes-base.if", "typeVersion": 2,
       "position": [1000, 120],
@@ -58,11 +61,12 @@
       "position": [1200, 120],
       "parameters": { "resource": "message", "operation": "sendMessage", "chatId": "YOUR_CHAT_ID",
         "text": "=⚠️ KRITIK STOK ({{ $json.kritik_sayisi }} kalem): {{ $json.kritik_liste }}",
-        "additionalFields": {} },
+        "additionalFields": { "appendAttribution": false, "parse_mode": "HTML" } },
       "credentials": { "telegramApi": { "id": "AqTelegramBot001", "name": "Telegram @your_bot" } } }
   ],
   "connections": {
     "Her Sabah 0845": { "main": [[ { "node": "PG Kritik Stok", "type": "main", "index": 0 } ]] },
+    "Manuel Test": { "main": [[ { "node": "PG Kritik Stok", "type": "main", "index": 0 } ]] },
     "PG Kritik Stok": { "main": [[ { "node": "PG Acik Emirler", "type": "main", "index": 0 } ]] },
     "PG Acik Emirler": { "main": [[ { "node": "PG Son 24s Hareket", "type": "main", "index": 0 } ]] },
     "PG Son 24s Hareket": { "main": [[ { "node": "Rapor Paketle", "type": "main", "index": 0 } ]] },
@@ -72,5 +76,5 @@
     "Mail Gonder": { "main": [[ { "node": "Telegram Rapor", "type": "main", "index": 0 } ]] },
     "Kritik Var Mi": { "main": [[ { "node": "Acil Uyari", "type": "main", "index": 0 } ], []] }
   },
-  "settings": { "executionOrder": "v1", "errorWorkflow": "__BEKCI_ID__", "timezone": "Europe/Istanbul" }
+  "settings": { "executionOrder": "v1", "errorWorkflow": "AqBekci000000001", "timezone": "Europe/Istanbul" }
 }

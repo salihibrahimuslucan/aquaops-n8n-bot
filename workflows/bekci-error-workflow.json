@@ -1,4 +1,5 @@
 {
+  "id": "AqBekci000000001",
   "name": "Bekci — Error Workflow",
   "nodes": [
     { "id": "e1", "name": "Hata Yakala", "type": "n8n-nodes-base.errorTrigger", "typeVersion": 1,
@@ -6,8 +7,8 @@
     { "id": "e2", "name": "Salihe Bildir", "type": "n8n-nodes-base.telegram", "typeVersion": 1.2,
       "position": [220, 0],
       "parameters": { "resource": "message", "operation": "sendMessage", "chatId": "YOUR_CHAT_ID",
-        "text": "=⛔ n8n akisi hata verdi!\nAkis: {{ $json.workflow.name }}\nHata: {{ $json.execution && $json.execution.error ? $json.execution.error.message : 'bilinmiyor' }}\nExecution: {{ $json.execution ? $json.execution.id : '-' }}",
-        "additionalFields": {} },
+        "text": "=⛔ n8n akisi hata verdi!\nAkis: {{ $json.workflow.name }}\nHata: {{ ($json.execution && $json.execution.error ? $json.execution.error.message : 'bilinmiyor').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').slice(0,1000) }}\nExecution: {{ $json.execution ? $json.execution.id : '-' }}",
+        "additionalFields": { "appendAttribution": false, "parse_mode": "HTML" } },
       "credentials": { "telegramApi": { "id": "AqTelegramBot001", "name": "Telegram @your_bot" } } }
   ],
   "connections": { "Hata Yakala": { "main": [[ { "node": "Salihe Bildir", "type": "main", "index": 0 } ]] } },
