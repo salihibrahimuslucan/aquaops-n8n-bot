@@ -10,7 +10,7 @@
       "position": [200, 0],
       "parameters": { "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
         "combinator": "and",
-        "conditions": [ { "leftValue": "={{ $json.message.chat.id }}", "rightValue": YOUR_CHAT_ID,
+        "conditions": [ { "leftValue": "={{ $json.message.chat.id }}", "rightValue": "YOUR_CHAT_ID",
           "operator": { "type": "number", "operation": "equals" } } ] } } },
     { "id": "b3", "name": "Intent Prompt", "type": "n8n-nodes-base.code", "typeVersion": 2,
       "position": [400, 0],
