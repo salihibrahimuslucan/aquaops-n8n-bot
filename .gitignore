@@ -5,3 +5,6 @@ creds/
 *.log
 .cache/
 node_modules_trash*/
+
+# lokal kopyalar (gercek subdomain/chat_id icerir)
+*.local.cmd
