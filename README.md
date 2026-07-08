@@ -3,6 +3,10 @@
 n8n öğrenme projesi — hobi/deneme ama **canlı Aquatronic ERP verisiyle** çalışan gerçek bir
 otomasyon. Amaç: CV'ye "uçtan uca çalışan gerçek bir n8n deneyimi" yazabilmek.
 
+Claude ile birlikte geliştirildi: mimariyi ve akış tasarımını ben kurdum, uygulamayı Claude'a
+yaptırdım, her adımı canlı ERP'ye karşı çalıştırıp kanıtladım (bkz. "Canlı test kanıtları").
+Aşağıdaki hata/düzeltme notları uydurma değil — gerçekten karşılaşılan ve çözülen sorunlar.
+
 ## Ne yapıyor
 
 İki n8n akışı + bir "bekçi" (error workflow), canlı Supabase ERP'sine salt-okunur bağlanıyor:
@@ -91,14 +95,14 @@ ERP'ye (Supabase Postgres, canlı prod) yalnızca `SELECT` yetkisiyle bağlanmak
 açıldı: `db/setup_n8n_ro.sql` (rol + gerekli tablolara `GRANT SELECT` + RLS policy + salt-okunur
 transaction ayarı). Geri almak gerekirse `db/rollback_n8n_ro.sql` aynı yetkileri söküyor —
 DDL'ler `tools/run_sql.js` ile koşuluyor (`node tools/run_sql.js <baglanti-stringi> <sql-dosyasi>`).
-Kanıt: `n8n_ro` ile okuma 542 kalem döndü, `INSERT` denemesi reddedildi.
+Kanıt: `n8n_ro` ile okuma yüzlerce kalem döndü, `INSERT` denemesi reddedildi.
 
 ## Canlı test kanıtları
 
 - **2026-07-07:** Akış A CLI ile uçtan uca çalıştırıldı — gerçek mail + Telegram raporu gitti
   (kritik stok listesi ERP'den geldi, çok sayıda 0-stok kalem tespit edildi).
 - **2026-07-07:** Akış B canlı testleri, Salih telefondan yazıp cevap aldı:
-  - "412 stok?" → 📦 AquaLIGHT 412: 153 / 412C: 298
+  - "412 stok?" → 📦 AquaLIGHT 412: [gerçek rakam, örnekte genelleştirildi] / 412C: [aynı]
   - "emirler" → "Acik uretim emri yok"
   - "kur" → 💱 EUR/TRY 53.42, USD/TRY 46.80
   - "selam napiyorsun" → sohbet cevabı — **ilk denemede Türkçe karakterler bozuk çıktı**
