@@ -1,15 +1,15 @@
 # AquaOps Bot
 
 n8n automation over a live ERP: a scheduled morning operations report, a Telegram
-assistant with LLM intent classification, and an error watchdog — all reading a
+assistant with LLM intent classification, and an error watchdog, all reading a
 production Supabase Postgres through a dedicated read-only role.
 
 This started as an n8n learning project, but it runs against the live Aquatronic ERP
-rather than toy data — the goal was genuine, end-to-end n8n operating experience. I
+rather than toy data. The goal was genuine, end-to-end n8n operating experience. I
 designed the architecture and the workflow topology, drove the implementation with an
 LLM pair-programmer, and executed every step against the live ERP to prove it works
-(see "Live test evidence"). The bug-and-fix notes below are not hypothetical; each one
-was actually hit and resolved.
+(see "Live test evidence"). The bug-and-fix notes below are not hypothetical. Each one
+was hit and resolved.
 
 ## What it does
 
@@ -27,7 +27,7 @@ Supabase ERP:
   Postgres queries. **The LLM never generates SQL** — it only picks the intent.
 - **Watchdog** (`workflows/bekci-error-workflow.json`): if Flow A or B fails, it sends
   a Telegram alert with the workflow name, error message and execution id. **It only
-  works while it is itself active** — see "Lessons learned".
+  works while it is itself active** (see "Lessons learned").
 
 ## Architecture
 
@@ -112,28 +112,28 @@ Boot takes anywhere from 30 seconds to 4 minutes ("Database is not ready!" and h
 `http://localhost:5678/healthz` returns `{"status":"ok"}`.
 
 **Scheduling caveat:** Flow A's Schedule Trigger only fires if the n8n process is
-running at 08:45 — missed triggers are not replayed. The clean fix is a Windows Task
+running at 08:45. Missed triggers are not replayed. The clean fix is a Windows Task
 Scheduler task that runs `start_n8n.cmd` (tunnel included) at logon; this is
 deliberately not automated yet, and the manual recipe above is the current mode of
 operation.
 
 ## Live test evidence
 
-- **2026-07-07 — Flow A end-to-end (CLI):** real email + Telegram report delivered; the
+- **2026-07-07 — Flow A end-to-end (CLI):** real email + Telegram report delivered. The
   critical-stock list came from the live ERP and flagged a number of zero-stock items.
 - **2026-07-07 — Flow B live, from a phone:**
   - a stock query ("412 stok?") returned live quantities for the AquaLIGHT 412 / 412C
     items (real figures generalized in this public copy);
   - an orders query ("emirler") correctly reported no open production orders;
   - an FX query ("kur") returned EUR/TRY 53.42, USD/TRY 46.80;
-  - small talk produced a conversational reply — **the first attempt garbled the
-    Turkish characters** (see the encoding lesson below); after the fix the reply came
+  - small talk produced a conversational reply. **The first attempt garbled the
+    Turkish characters** (see the encoding lesson below). After the fix the reply came
     back in clean UTF-8, verified end to end.
 - **2026-07-07 — Guard test:** a POST with a spoofed `chat_id=999` was sent to the
   webhook; execution stopped at the `Telegram Dinle` → `Salih Mi` IF guard, no
   downstream node ran, and no reply was sent.
 - **2026-07-07 — Watchdog chaos test:** a throwaway webhook-triggered workflow that
-  deliberately throws was executed. **On the first run the watchdog sent nothing** — it
+  deliberately throws was executed. **On the first run the watchdog sent nothing**: it
   was inactive (see below). After activating it and re-triggering, the alert arrived
   correctly: workflow name + error message + execution id. The test workflow was
   deleted afterwards.
@@ -141,14 +141,14 @@ operation.
 ## Lessons learned
 
 - **Error workflows must themselves be active.** `settings.errorWorkflow` pointed at
-  the watchdog, but while the watchdog was inactive it silently did nothing — the
+  the watchdog, but while the watchdog was inactive it silently did nothing. The
   failure only appeared in the log. Found the hard way in the chaos test above, fixed
   by activating it, then re-verified.
 - **Execution mode changes error behavior.** `manual` executions (the "Test Workflow"
   button) do not fire the error workflow at all; `webhook`, `cli`, `error` and
   `internal` modes each hook differently. Chaos tests must use a real trigger.
 - **Free tunnels are fragile.** The localtunnel free tier dies occasionally, and every
-  restart mints a new URL — which forces an n8n restart with the new `WEBHOOK_URL`. A
+  restart mints a new URL, which forces an n8n restart with the new `WEBHOOK_URL`. A
   fixed domain via ngrok or cloudflared is the durable fix.
 - **Encoding breaks in odd places.** Calling the LLM through the generic HTTP Request
   node, the `responseFormat` setting corrupted UTF-8 output (the garbled Turkish
