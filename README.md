@@ -24,7 +24,7 @@ Supabase ERP:
 - **Flow B — Telegram ERP assistant** (`workflows/akis-b-telegram-asistan.json`):
   incoming Telegram messages (stock / orders / FX rates / small talk) are
   intent-classified by Gemini, and the answer is produced by fixed, parameterized
-  Postgres queries. **The LLM never generates SQL** — it only picks the intent.
+  Postgres queries. **The LLM never generates SQL**, it only picks the intent.
 - **Watchdog** (`workflows/bekci-error-workflow.json`): if Flow A or B fails, it sends
   a Telegram alert with the workflow name, error message and execution id. **It only
   works while it is itself active** (see "Lessons learned").
